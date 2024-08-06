@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Better Metronome</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        #bpm-display {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        #bpm-slider, #tempo-indication {
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #bpm-slider {
+            margin-bottom: 1rem;
+        }
+        #volume-slider {
+            width: 60%;
+            margin-bottom: 1rem;
+            -webkit-appearance: none;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        #volume-slider:hover {
+            opacity: 1;
+        }
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #000;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        #volume-slider::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: #000;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        button {
+            font-size: 1rem;
+            margin: 0 0.5rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+        }
+        .sound-icons {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .sound-icon {
+            font-size: 2rem;
+            margin: 0 1rem;
+            cursor: pointer;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid transparent;
+            border-radius: 10px;
+        }
+        .active {
+            border-color: #007bff;
+        }
+        .explanation {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            text-align: left;
+            padding: 1rem;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+        }
+        .practice-tip {
+            margin-top: 1rem;
+            font-style: italic;
+            background-color: #e6f3ff;
+            padding: 0.5rem;
+            border-radius: 5px;
+        }
+        .control-label {
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+        #tempo-indication {
+            background-color: #007bff;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .footer {
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>The Better Metronome</h1>
+        <div id="tempo-indication"></div>
+        <div id="bpm-display">120 BPM</div>
+        <input type="range" id="bpm-slider" min="0" max="38" value="25">
+        <div>
+            <button id="decrease-bpm">−</button>
+            <button id="start-stop">Start</button>
+            <button id="increase-bpm">+</button>
+        </div>
+        <div class="control-label">Volume</div>
+        <input type="range" id="volume-slider" min="0" max="100" value="50">
+        <div class="control-label">Sound</div>
+        <div class="sound-icons">
+            <span class="sound-icon active" id="ping">〰️</span>
+            <span class="sound-icon" id="wood">▲</span>
+            <span class="sound-icon" id="beep">◻️</span>
+        </div>
+        <div class="explanation">
+            <h3>Why This Metronome is Better:</h3>
+            <p>This metronome uses the Maelzel scale, offering significant advantages over standard online metronomes:</p>
+            <ol>
+                <li><strong>Consistent Percentage Increases:</strong> Each step is about a 3.6% tempo increase, regardless of the starting speed. This allows for smooth, gradual tempo changes that feel natural at any BPM.</li>
+                <li><strong>Predictable Doubling:</strong> It always takes exactly 16 steps to double or halve the tempo, making it easy to track your progress when increasing speed.</li>
+                <li><strong>Adaptive Increments:</strong> As the BPM increases, so does the size of each step. This maintains the feeling of a consistent change even at higher speeds.</li>
+                <li><strong>Superior to Standard Online Metronomes:</strong> Most online metronomes use a 1x1 scale where each step is just 1 BPM. This makes the percentage increase smaller at higher tempos, making it harder to perceive changes and less efficient for gradual speed training.</li>
+                <li><strong>Matches Traditional Metronomes:</strong> This scale corresponds to the markings on mechanical metronomes, providing a familiar experience for musicians.</li>
+            </ol>
+            <div class="practice-tip">
+                <strong>Practice Tip:</strong> Start at ½ speed → Play perfectly → Click up → Repeat 16x → Reach ideal tempo, perfectly!
+            </div>
+        </div>
+        <div class="footer">
+            Created by Eddie Zheng
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const bpmValues = [40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 63, 66, 69, 72, 76, 80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120, 126, 132, 138, 144, 152, 160, 168, 176, 184, 192, 200, 208];
+            let currentBpmIndex = 25; // Start at 120 BPM
+            let isPlaying = false;
+            let currentSound = 'ping';
+            let volume = 0.5;
+
+            const bpmDisplay = document.getElementById('bpm-display');
+            const bpmSlider = document.getElementById('bpm-slider');
+            const volumeSlider = document.getElementById('volume-slider');
+            const startStopBtn = document.getElementById('start-stop');
+            const decreaseBtn = document.getElementById('decrease-bpm');
+            const increaseBtn = document.getElementById('increase-bpm');
+            const tempoIndication = document.getElementById('tempo-indication');
+
+            // Error checking for DOM elements
+            const elements = { bpmDisplay, bpmSlider, volumeSlider, startStopBtn, decreaseBtn, increaseBtn, tempoIndication };
+            for (const [name, element] of Object.entries(elements)) {
+                if (!element) {
+                    console.error(`Element ${name} not found`);
+                    return; // Exit the script if any element is missing
+                }
+            }
+
+            let audioContext;
+            let nextNoteTime = 0;
+            let timerID = null;
+
+            function initAudio() {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            function scheduleNote(time) {
+                const osc = audioContext.createOscillator();
+                const envelope = audioContext.createGain();
+
+                switch(currentSound) {
+                    case 'ping':
+                        osc.type = 'sine';
+                        osc.frequency.value = 880;
+                        envelope.gain.setValueAtTime(0, time);
+                        envelope.gain.linearRampToValueAtTime(volume, time + 0.001);
+                        envelope.gain.linearRampToValueAtTime(0, time + 0.001 + 0.1);
+                        break;
+                    case 'wood':
+                        osc.type = 'triangle';
+                        osc.frequency.value = 220;
+                        envelope.gain.setValueAtTime(0, time);
+                        envelope.gain.linearRampToValueAtTime(volume, time + 0.001);
+                        envelope.gain.linearRampToValueAtTime(0, time + 0.001 + 0.05);
+                        break;
+                    case 'beep':
+                        osc.type = 'square';
+                        osc.frequency.value = 880;
+                        envelope.gain.setValueAtTime(0, time);
+                        envelope.gain.linearRampToValueAtTime(volume, time + 0.001);
+                        envelope.gain.linearRampToValueAtTime(0, time + 0.001 + 0.03);
+                        break;
+                }
+
+                osc.connect(envelope);
+                envelope.connect(audioContext.destination);
+
+                osc.start(time);
+                osc.stop(time + 0.1);
+            }
+
+            function scheduler() {
+                while (nextNoteTime < audioContext.currentTime + 0.1) {
+                    scheduleNote(nextNoteTime);
+                    nextNoteTime += 60.0 / bpmValues[currentBpmIndex];
+                }
+                timerID = window.setTimeout(scheduler, 25.0);
+            }
+
+            function startMetronome() {
+                if (!audioContext) {
+                    initAudio();
+                }
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                isPlaying = true;
+                nextNoteTime = audioContext.currentTime;
+                scheduler();
+                startStopBtn.textContent = 'Stop';
+            }
+
+            function stopMetronome() {
+                isPlaying = false;
+                window.clearTimeout(timerID);
+                startStopBtn.textContent = 'Start';
+            }
+
+            function updateBPM() {
+                const currentBPM = bpmValues[currentBpmIndex];
+                bpmDisplay.textContent = `${currentBPM} BPM`;
+                bpmSlider.value = currentBpmIndex;
+
+                let tempoText;
+                if (currentBPM < 60) tempoText = "Lento";
+                else if (currentBPM < 66) tempoText = "Largo";
+                else if (currentBPM < 76) tempoText = "Adagio";
+                else if (currentBPM < 108) tempoText = "Andante";
+                else if (currentBPM < 120) tempoText = "Moderato";
+                else if (currentBPM < 156) tempoText = "Allegro";
+                else if (currentBPM < 168) tempoText = "Vivace";
+                else if (currentBPM < 200) tempoText = "Presto";
+                else tempoText = "Prestissimo";
+
+                tempoIndication.textContent = tempoText;
+            }
+
+            bpmSlider.addEventListener('input', () => {
+                currentBpmIndex = parseInt(bpmSlider.value);
+                updateBPM();
+            });
+
+            volumeSlider.addEventListener('input', () => {
+                volume = parseInt(volumeSlider.value) / 100;
+            });
+
+            startStopBtn.addEventListener('click', () => {
+                if (isPlaying) {
+                    stopMetronome();
+                } else {
+                    startMetronome();
+                }
+            });
+
+            decreaseBtn.addEventListener('click', () => {
+                if (currentBpmIndex > 0) {
+                    currentBpmIndex--;
+                    updateBPM();
+                }
+            });
+
+            increaseBtn.addEventListener('click', () => {
+                if (currentBpmIndex < bpmValues.length - 1) {
+                    currentBpmIndex++;
+                    updateBPM();
+                }
+            });
+
+            document.querySelectorAll('.sound-icon').forEach(icon => {
+                icon.addEventListener('click', () => {
+                    document.querySelector('.sound-icon.active').classList.remove('active');
+                    icon.classList.add('active');
+                    currentSound = icon.id;
+                });
+            });
+
+            updateBPM();
+        });
+    </script>
+</body>
+</html>
